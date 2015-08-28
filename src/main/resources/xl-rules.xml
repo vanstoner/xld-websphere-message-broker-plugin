@@ -1,0 +1,35 @@
+<!--
+
+    THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS
+    FOR A PARTICULAR PURPOSE. THIS CODE AND INFORMATION ARE NOT SUPPORTED BY XEBIALABS.
+
+-->
+
+<rules xmlns="http://www.xebialabs.com/xl-deploy/xl-rules">
+    <!-- Add your <rule ...> and <disable-rule ...> elements here -->
+    <rule name="stanard.BarModule.DEPLOY" scope="deployed">
+        <conditions>
+            <type>messagebroker.BarModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <description>Stop broker</description>
+                <script>messagebroker/stopBroker</script>
+                <order>20</order>
+            </os-script>
+            <os-script>
+                <script>messagebroker/deployBrokerFile</script>
+                <order>50</order>
+            </os-script>
+            <os-script>
+                <description>Start broker</description>
+                <script>messagebroker/startBroker</script>
+                <order>90</order>
+            </os-script>
+
+        </steps>
+    </rule>
+</rules>

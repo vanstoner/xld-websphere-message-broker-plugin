@@ -1,0 +1,21 @@
+<!--
+
+    THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS
+    FOR A PARTICULAR PURPOSE. THIS CODE AND INFORMATION ARE NOT SUPPORTED BY XEBIALABS.
+
+-->
+
+<synthetic xsi:schemaLocation="http://www.xebialabs.com/deployit/synthetic synthetic.xsd" xmlns="http://www.xebialabs.com/deployit/synthetic" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <type type="messagebroker.MessageBroker" extends="udm.BaseContainer" description="WebSphere Message Broker">
+        <property name="host" kind="ci" referenced-type="overthere.Host" as-containment="true" />
+        <property name="brokerSpec" required="true" />
+    </type>
+
+    <type type="messagebroker.BarModule" extends="udm.BaseDeployedArtifact" deployable-type="messagebroker.Bar" container-type="messagebroker.MessageBroker">
+        <generate-deployable type="messagebroker.Bar" extends="udm.BaseDeployableFileArtifact"/>
+        <property name="executionGroup" required="true" />
+        <property name="flowName" required="true" />
+        <property name="timeoutSecs" required="true" default="60" />
+    </type>
+</synthetic>
