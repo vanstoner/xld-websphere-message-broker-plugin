@@ -9,13 +9,46 @@
 <synthetic xsi:schemaLocation="http://www.xebialabs.com/deployit/synthetic synthetic.xsd" xmlns="http://www.xebialabs.com/deployit/synthetic" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <type type="messagebroker.MessageBroker" extends="udm.BaseContainer" description="WebSphere Message Broker">
         <property name="host" kind="ci" referenced-type="overthere.Host" as-containment="true" />
-        <property name="brokerSpec" required="true" />
+        <property name="brokerSpec" required="false" description="Name of this broker (if different from your component name)"/>
+        <property name="mqsiprofile" required="false" description="If defined the mqsiprofile specified will be executed prior to deployment"/>
+        <property name="queueManager" description="Queue Manager for this broker"/>
     </type>
 
-    <type type="messagebroker.BarModule" extends="udm.BaseDeployedArtifact" deployable-type="messagebroker.Bar" container-type="messagebroker.MessageBroker">
-        <generate-deployable type="messagebroker.Bar" extends="udm.BaseDeployableFileArtifact"/>
-        <property name="executionGroup" required="true" />
-        <property name="flowName" required="true" />
-        <property name="timeoutSecs" required="true" default="60" />
+    <type type="messagebroker.ExecutionGroup" extends="udm.BaseContainer" description="Execution Group on a broker">
+        <property name="broker" kind="ci" referenced-type="messagebroker.MessageBroker" as-containment="true" />
     </type>
+
+    <type type="messagebroker.BarModule" extends="udm.BaseDeployedArtifact" deployable-type="messagebroker.Bar" container-type="messagebroker.ExecutionGroup">
+        <generate-deployable type="messagebroker.Bar" extends="udm.BaseDeployableFileArtifact"/>
+        <property name="executionGroup" required="false" />
+        <property name="flowNames" kind="set_of_string" required="true" description="List of flow names for rollback purposes"/>
+        <property name="timeoutSecs" required="true" default="60" />
+        <property name="barOverrides" kind="map_string_string" category="Overrides" description="Key Value pairs of bar overrides for this barfile" required="false"/>
+        <property name="restart" kind="boolean" default="false" category="Deployment" description="Restart Broker on deployment"/>
+        <property name="flowMonitoring" category="Monitoring" description="Enable flow monitoring for all flows in this application" kind="boolean" default="false"/>
+        <property name="application" description="Application to which this barfile contributes" required="false"/>
+    </type>
+
+
+    <type type="messagebroker.BarPackageModule" extends="udm.BaseDeployedArtifact" deployable-type="messagebroker.BarPackage" container-type="messagebroker.ExecutionGroup">
+        <generate-deployable type="messagebroker.BarPackage" extends="udm.BaseDeployableFolderArtifact"/>
+        <property name="timeoutSecs" required="true" default="60" />
+        <property name="restart" kind="boolean" default="false" category="Deployment" description="Restart Broker on deployment"/>
+        <property name="applications" kind="set_of_ci" as-containment="true" referenced-type="messagebroker.Application" description="Applications this barfile contains" required="false"/>
+        <property name="barfileName" kind="string" description="Base name of barfile if blank name of this component is used" required="false"/>
+        <property name="propertiesDirectory" category="Overrides" description="Location of the environment specific properties file (if blank the deployedApplication Environment is used)" required="false"/>
+        <property name="inputQueues" category="Broker Admin" kind="set_of_string" required="false" description="List of input queues to control"/>
+    </type>
+
+    <type-modification type="messagebroker.BarPackage">
+        <property name="applications" kind="set_of_ci" referenced-type="messagebroker.ApplicationSpec" as-containment="true" description="Application in this bar package" />
+    </type-modification>
+
+    <type type="messagebroker.Application" deployable-type="messagebroker.ApplicationSpec" container-type="messagebroker.BarPackageModule" extends="udm.BaseEmbeddedDeployed" description="Message Broker Application">
+        <generate-deployable type="messagebroker.ApplicationSpec" extends="udm.BaseEmbeddedDeployable" description="Application within this bar package"/>
+        <property name="flowNames" category="Flow Administration" kind="map_string_string" description="Flows within this application and their monitoring (true/false)" required="false"/>
+        <property name="monitorAllFlows" category="Flow Administration" kind="boolean" description="Monitor all flows within this application" required="false" default="false"/>
+        <property name="managedApplication" kind="boolean" default="false" required="true" description="Is this a managed Message Broker Application?"/>
+    </type>
+
 </synthetic>

@@ -1,18 +1,19 @@
-<!--
+<rules xmlns="http://www.xebialabs.com/xl-deploy/xl-rules">
+    <!-- Add your <rule ...> and <disable-rule ...> elements here 
 
     THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS
     FOR A PARTICULAR PURPOSE. THIS CODE AND INFORMATION ARE NOT SUPPORTED BY XEBIALABS.
 
--->
+    -->
 
-<rules xmlns="http://www.xebialabs.com/xl-deploy/xl-rules">
-    <!-- Add your <rule ...> and <disable-rule ...> elements here -->
-    <rule name="stanard.BarModule.DEPLOY" scope="deployed">
+   <rule name="messagebroker.BarModule.DEPLOY_WITH_RESTART" scope="deployed">
         <conditions>
             <type>messagebroker.BarModule</type>
             <operation>CREATE</operation>
             <operation>MODIFY</operation>
+            <operation>NOOP</operation>
+            <expression>deployed.restart</expression>
         </conditions>
         <steps>
             <os-script>
@@ -21,15 +22,96 @@
                 <order>20</order>
             </os-script>
             <os-script>
-                <script>messagebroker/deployBrokerFile</script>
-                <order>50</order>
-            </os-script>
-            <os-script>
                 <description>Start broker</description>
                 <script>messagebroker/startBroker</script>
                 <order>90</order>
             </os-script>
-
         </steps>
     </rule>
+
+    <rule name="messagebroker.BarModule.DEPLOY_NO_RESTART" scope="deployed">
+        <conditions>
+            <type>messagebroker.BarModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <target-host expression="true">deployed.container.broker.host</target-host>
+                <description expression="true">"Deploy Barfile [%s] to Container [%s] on host [%s]" % (deployed.name,deployed.container.name, deployed.container.broker.name)</description>
+                <script>messagebroker/deployBrokerFile</script>
+                <order>50</order>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="messagebroker.BarPackageModule.DEPLOY_NO_RESTART" scope="deployed">
+        <conditions>
+            <type>messagebroker.BarPackageModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <target-host expression="true">deployed.container.broker.host</target-host>
+                <description expression="true">"Deploy Barfile [%s] to Container [%s] on broker [%s] overriding for [%s]" % (deployed.name,deployed.container.name, deployed.container.broker.name,deployedApplication.environment.name)</description>
+                <script>messagebroker/deployBrokerPackage</script>
+                <order>50</order>
+                <freemarker-context>
+                    <environmentName expression="true">deployedApplication.environment.name</environmentName>
+                </freemarker-context>
+            </os-script>
+        </steps>
+    </rule>
+    <rule name="messagebroker.BarPackageModule.DEPLOY_DISABLE_ENABLE_QUEUES" scope="deployed">
+        <conditions>
+            <type>messagebroker.BarPackageModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+            <expression>deployed.inputQueues</expression>
+        </conditions>
+        <steps>
+            <os-script>
+                <target-host expression="true">deployed.container.broker.host</target-host>
+                <description expression="true">"Disable Get on Input Queues on broker queue manager [%s]" % (deployed.container.broker.queueManager)</description>
+                <script>messagebroker/alterQueues</script>
+                <freemarker-context>
+                    <action>DISABLED</action>
+                </freemarker-context>
+                <order>10</order>
+            </os-script>
+            <os-script>
+                <target-host expression="true">deployed.container.broker.host</target-host>
+                <description expression="true">"Enable queues on broker queue manager [%s]" % (deployed.container.broker.queueManager)</description>
+                <script>messagebroker/alterQueues</script>
+                <freemarker-context>
+                    <action>ENABLED</action>
+                </freemarker-context>
+                <order>90</order>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="messagebroker.BarPackageModule.DEPLOY_DISABLE_ENABLE_MONITORING" scope="deployed">
+        <conditions>
+            <type>messagebroker.BarPackageModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+            <expression>deployed.applications</expression>
+        </conditions>
+        <steps>
+            <os-script>
+                <target-host expression="true">deployed.container.broker.host</target-host>
+                <description expression="true">"Activate monitoring for applications [%s]" % (", ".join(map(str,deployed.applications)).split("/")[-1])</description>
+                <script>messagebroker/setMonitoring</script>
+                <freemarker-context>
+                    <action>DISABLED</action>
+                </freemarker-context>
+                <order>90</order>
+            </os-script>
+        </steps>
+    </rule>
+
+
+
 </rules>
